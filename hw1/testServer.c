@@ -8,7 +8,7 @@
 
 int main(){
 	pid_t pid;
-	char inputBuffer[200000] = {};
+	char inputBuffer[2000000] = {};
 	//char message[] = {"Hi,this server.\n"};
 	//char message[] = {"<h1>Hello, this is the network programming home work.</h1><img src='./test.jpg'/>"};
 	char message[] = {"<h1>Hello, this is the network programming home work.</h1><img src='https://timesofindia.indiatimes.com//thumb/msid-67586673,width-800,height-600,resizemode-4/67586673.jpg'/><form enctype='multipart/form-data' action='./' method='POST'><input type='file' name='img'><input type='submit'></form>"};
@@ -41,57 +41,55 @@ int main(){
 			close(sd);
 			char data[2048] = {};
 			snprintf(data,sizeof(data),"%s %s",header,message);
-//			printf("%s\n",data);
 			send(connfd,data,sizeof(data),0);
-			// begin to send img
-/*			char p_array[2048];
-			FILE *image = fopen("test.jpg","r");
-			fseek(image,0,SEEK_END);
-			int size = ftell(image);
-			fseek(image,0,SEEK_SET);
-			printf("Total Picture size = %d\n",size);
-
-			printf("Sending Picture size\n");
-*/
-//			send(connfd,&size,sizeof(int),0);
-			//send(connfd,(void*)&size,sizeof(int),0);
-/*
-			int nb = fread(data,1,sizeof(data),image);
-			while(!feof(image)){
-				send(connfd,data,sizeof(data),0);
-			 	nb = fread(data,1,sizeof(data),image);
-			}
-*/
-//			send(connfd,header,sizeof(header),0);
-//			send(connfd,message,sizeof(message),0);
 			int t = recv(connfd,inputBuffer,sizeof(inputBuffer),0);
-//			printf("t = %d\n",t);
 			if(t>=0){
-				printf("Get: %s\n",inputBuffer);
 				char *ret = strstr(inputBuffer,"POST");
 				if(ret){
+					printf("Get: %s\n",inputBuffer);
+					printf("-------------------------------------\n");
+					// printf("t = %d\n",t);
+					// printf("Get: %s\n",inputBuffer);
 					printf("A POST received\n");
-					ret = strstr(inputBuffer,"Content-Type: image/");
-					printf("ret");
-					printf("\n---------------\n");
-					printf("%s\n",ret);
-					FILE* tmp = fopen("aa.txt","w+");
-					printf("sizeof(ret)=%d\nstrlen(ret=%d\n",sizeof(ret),strlen(ret));
-					//int t = fwrite(ret,1,sizeof(ret),tmp);
-					//fprintf(stderr,"t = %d\n",t);
-					for(int i=0; ret[i]!=0; i++){
-						printf("%c",ret[i]);
-						fwrite(&ret[i],1,sizeof(char),tmp);
+					// printf("%s\n",ret);		
+
+					char imgWord[] = "Content-Type: image/";
+					char splitWord[] = "-----------------------------";
+					char imgType[10] = {};
+					char filename[256] = {};
+					int k = 0;
+					FILE* tmp = NULL;
+					// find filename
+					char tmpWord[] = "filename=\"";
+					ret = strstr(inputBuffer,tmpWord);
+					for(k=0;ret[k+strlen(tmpWord)]!='"'; k++){
+						filename[k]=ret[k+strlen(tmpWord)];
 					}
+					filename[k]='\0';
+					printf("filename = %s\n",filename);
+
+					// find begin of image
+					ret = strstr(ret,imgWord);
+					for(k=0;ret[k+strlen(imgWord)]!='\n'; k++);
+
+					// find image size
+					int offset = strlen(imgWord)+k+3;
+					char *start =ret+offset;
+					int size = 0;
+					for(size=0; size<sizeof(inputBuffer);size++){
+						if(!strncmp((start+size),splitWord,strlen(splitWord))) break;	
+					}
+					printf("size = %d\n",size);
+
+					// write image to file
+					tmp = fopen(filename,"w+");
+					fwrite(start,1,size,tmp);
+					// printf("-------------------------------------\n");
 
 					fclose(tmp);
-					printf("\nend of write----------------\n");
-				//	printf("%s\n",ret);
 				}
 			}
-//			for(;;);
 			close(connfd);
-	//		sleep(5);
 			exit(0);
 		}else{
 			close(connfd);
