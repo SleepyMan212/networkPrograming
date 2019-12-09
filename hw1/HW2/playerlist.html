@@ -1,0 +1,80 @@
+<html>
+    <head>
+        <style>
+            html, body, #app {
+                margin: 0;
+                color: #fff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                background-color: #222;
+                width: 100%;
+                height: 100%;
+            }    
+            .title{
+                width: 560px;
+                margin: 0 auto;
+            }
+            .submit{
+                margin-left: -8px;
+            }
+            .list{
+                margin-top: 50px;
+            }
+            .box{
+                width: 560px;
+                display: flex;
+                justify-content: space-between;
+                padding: 15px 10px;
+                margin: 10px 0;
+                border: 1px solid whitesmoke;
+            }
+            .play{
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <h1>Players</h1>
+            <div class="list" >
+                <div class="box" v-for="user in users">
+                    <div class="user">{{user}}</div>
+                    <div class="play">Play</div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.8/vue.min.js"></script>
+    <script>
+    const vm = new Vue({
+        el: "#app",
+        data: {
+            users:[],
+            time: null
+        },
+        mounted(){
+            this.getAllUser();
+            this.timer();
+        },
+        methods:{
+            timer(){
+                this.time = setInterval(this.getAllUser,5000)
+            },
+            getAllUser(){
+                fetch("getAllUser")
+                .then((res)=>res.json())
+                .then((data)=>{
+                    console.log(data);
+                    this.users = data.users;
+                })
+            }
+        },
+        computed:{
+            
+        }
+    });
+    </script>
+</html>

@@ -1,0 +1,158 @@
+<html>
+    <head>
+        <style>
+            html, body, #app {
+                margin: 0;
+                color: #fff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                background-color: #222;
+                width: 100%;
+                height: 100%;
+                }
+
+                .block_area {
+                width: 300px;
+                height: 300px;
+                display: flex;
+                flex-wrap: wrap;
+                }
+
+                .block {
+                width: 100px;
+                height: 100px;
+                border: solid 1px rgba(255, 255, 255, 0.1);
+                position: relative;
+                box-sizing: border-box;
+                }
+                .block.small {
+                width: 60px;
+                height: 60px;
+                }
+                .block:after, .block:before {
+                content: "";
+                display: block;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                transition: 0.5s;
+                }
+                .block:hover {
+                background-color: #2c2c2c;
+                }
+
+                .circle:after, .circle:before {
+                border-radius: 50%;
+                }
+                .circle:before {
+                width: 90%;
+                height: 90%;
+                background-color: #f35;
+                }
+                .circle:after {
+                width: 60%;
+                height: 60%;
+                background-color: #222;
+                }
+
+                .cross:before, .cross:after {
+                width: 90%;
+                height: 15%;
+                background-color: #46f;
+                border-radius: 0px;
+                }
+                .cross:before {
+                transform: translate(-50%, -50%) rotate(45deg);
+                }
+                .cross:after {
+                transform: translate(-50%, -50%) rotate(-45deg);
+                }
+                .title{
+                width: 560px;
+                margin: 0 auto;
+                }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+                <div class="title">
+                        <h1>Network Programming HW 2</h1>
+                </div>
+                <div class="small_number">{{blocks}}</div>
+                <h2>{{win_text}}</h2>
+                <div class="block_area">
+                    <!-- <div class="block"  v-for="block in blocks"  v-bind:class="{circle: block.type==1,cross: block.type==-1}" v-on:click="player_go(block)"> -->
+                    <div class="block"  v-for="(block,bid) in blocks"  v-bind:class="{circle: block.type==1,cross: block.type==-1}" v-on:click="player_go(block)">
+                        <div class="small_number">{{bid+1}}</div>
+                    </div>
+                </div>
+                <h3>
+                    Player
+                    <div class="block small"v-bind:class="{circle: turn==1,cross: turn==-1}" ></div>
+                </h3>
+                <h3 @click="restart">Restart</h3>
+        </div>
+    </body>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.8/vue.min.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#app",
+            data: {
+                blocks: [],
+                turn: 1
+            },
+            mounted(){
+                this.restart();
+            },
+            methods:{
+                restart(){
+                    this.blocks =  Array.from({length: 9},()=>{
+                        return {type: 0};
+                    });
+                },
+                player_go(block){
+                    if(block.type==0){
+                        block.type = this.turn;
+                        this.turn*=-1;  
+                    }
+                }
+            },
+            computed:{
+                pattern_data(){
+                    var verify_list = "159,456,789,147,258,369,159,357"
+                    var result = verify_list.split(",")
+                                .map((vtext)=>{
+                                    var add = this.blocks.filter((d,i)=>{
+                                    return vtext.indexOf(i+1)!=-1
+                                    })
+                                    // .map((d)=>d.type)
+                                    .reduce((a,b)=>a+b.type,0)
+                                    return {
+                                    rule: vtext,
+                                    value: add
+                                    };
+                                });
+                    
+                    result = result.filter((obj)=>Math.abs(obj.value)==3)
+                    return result
+                },
+                win_text(){
+                    let winner = -1
+                    if (this.pattern_data.length>0){
+                        winner = this.pattern_data[0].value
+                    }
+                    if(winner==3){
+                        return "O' Wins"
+                    }else if(winner==-3){
+                        return "X' Wins"
+                    }
+                    return (this.turn==1?"O":"X")+"' turn";
+                }
+            }
+        });
+    </script>
+</html>

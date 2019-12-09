@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <style>
+            html, body, #app {
+                margin: 0;
+                color: #fff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                background-color: #222;
+                width: 100%;
+                height: 100%;
+            }    
+            .title{
+                width: 560px;
+                margin: 0 auto;
+            }
+            .submit{
+                margin-left: -8px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <h1>Tic-tac-toe</h1>
+            <form action="playerlist.html" method="post">
+                <input type="text" name="userName">
+                <button class="submit" type="submit">submit</button>
+            </form>
+        </div>
+    </body>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.8/vue.min.js"></script>
+    <script>
+    const vm = new Vue({
+        el: "#app",
+        data: {
+        },
+        mounted(){
+        },
+        methods:{
+        },
+        computed:{
+            
+        }
+    });
+    </script>
+</html>
