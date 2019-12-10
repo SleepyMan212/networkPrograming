@@ -10,7 +10,9 @@ private:
     string path;
     void addFormdata(string str);
     void addCookie(string str);
+    void addParam(string str);
     map<string, string> formdata;
+    map<string, string> paramdata;
     map<string,string> headers;
     map<string,string> cookies;
 public:
@@ -22,6 +24,7 @@ public:
     string getMethod();
     string getPath();
     string getFormdata(string str);
+    string getParamdata(string str);
     string getHeaders();
     string getCookie(string str);
     void setHeader(string key,string value);

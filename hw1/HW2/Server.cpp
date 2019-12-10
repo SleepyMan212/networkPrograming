@@ -11,6 +11,7 @@
 #include <vector>
 #include <unistd.h>
 #include <cstring>
+#include <string>
 #include <arpa/inet.h>
 #include "Http.hpp"
 #include "Server.hpp"
@@ -143,21 +144,39 @@ void Server::handleClient(int cfd){
             http.setHeader("Content-Type","text/html; charset=utf-8");
             tmp = http.getResponse();
         }else if(method=="POST"&&path=="/playerlist.html"){
-            string name = http.getFormdata("userName");
-            userManage->addUser(User(name,cfd));
+            string name;
             http.setHeader("Content-Type","text/html; charset=utf-8");
-            http.setHeader("Set-Cookie","userName="+name);
+            if(http.getCookie("userName").empty()){
+                name = http.getFormdata("userName");
+                userManage->addUser(User(name,cfd));
+                http.setHeader("Set-Cookie","userName="+name);
+            }
+            // name=http.getCookie("userName");
             cerr<<http.getCookie("userName")<<endl;
             tmp = http.getResponse();
         }else if(method=="GET"&&path=="/getAllUser"){
             cerr<<"get all user"<<endl;
-            vector<string> v = userManage->getAllUser();
+            vector<string> v = userManage->getAllWaitingUser();
             Json json;
             json.addJson("users",v);
 
-    // "Content-Type: text/html; charset=utf-8\r\n";
             http.setHeader("Content-Type","application/json; charset=utf-8'");
             tmp = http.getResponse(json.getJson());
+        }else if(method=="GET"&&path=="/playwith"){
+            string t1 = http.getCookie("userName");
+            string t2 = http.getParamdata("opponent");
+            userManage->applyOpponent(t1,t2);
+        }else if(method=="POST"&&path=="/playwith"){
+            string t1 = http.getCookie("userName");
+            string t2 = userManage->getOpponent(t1);
+            string tmp = http.getFormdata("answer");
+            int ans = tmp.empty()?0:atoi(tmp.c_str());
+            // int ans;
+            if(ans==1){         // opponent accept
+                userManage->playWithOpponent(t1,t2);
+            }else if(ans==-1){  // opponent reject
+                userManage->resetOpponent(t1,t2);
+            }
         }
         // Send to client
         const char *aa=tmp.c_str();

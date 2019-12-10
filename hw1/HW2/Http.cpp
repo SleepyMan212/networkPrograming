@@ -20,10 +20,22 @@ Http::Http(const string &request){
     }
     method = v[0];
     path = v[1];
-
-    if(method=="POST"){
+    size_t pos = v[1].find("?");
+    path = v[1].substr(0,pos);
+    if(method=="GET"){
+        cerr<<"-----------GET-----------"<<endl;
+        string token ,tmp;
+        token = v[1].substr(pos+1,v[1].size()-pos-1);
+        while((pos=token.find(";"))!=string::npos){
+                tmp = token.substr(0,pos);
+                addParam(tmp);
+                token.erase(0,pos+1); //skip "&"
+        }
+        addParam(token);
+    }
+    else if(method=="POST"){
         cerr<<"--------POST---------"<<endl;
-        size_t pos = 0;
+        pos = 0;
         string token,tmp;
         pos = request.find("Content-Type: application/x-www-form-urlencoded");
         if(pos!=string::npos){
@@ -43,7 +55,7 @@ Http::Http(const string &request){
         cerr<<"--------END OF POST---------"<<endl;
     }
     // handle cookie
-    size_t pos,pos2;
+    size_t pos2;
     pos = request.find("Cookie: ")+8;
     if(pos!=string::npos){
         string tmp;
@@ -147,4 +159,17 @@ void Http::addCookie(string str){
 }
 string Http::getCookie(string str){
     return this->cookies[str];
+}
+void Http::addParam(string str){
+    size_t pos;
+    pos = str.find("=");
+    string a,b;
+    if(pos!=string::npos){
+        a = str.substr(0,pos);
+        b = str.substr(pos+1,str.length()-pos-1);
+        paramdata[a] = b;
+    }
+}
+string Http::getParamdata(string str){
+    return this->paramdata[str];
 }
