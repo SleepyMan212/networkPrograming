@@ -9,9 +9,7 @@
 
 using namespace std;
 
-Http::Http(const string &request){
-    headers="HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n";
-    
+Http::Http(const string &request){    
     istringstream iss(request);
     string tmp;
     vector<string> v;
@@ -43,23 +41,45 @@ Http::Http(const string &request){
             addFormdata(token);
         }
         cerr<<"--------END OF POST---------"<<endl;
-
     }
+    // handle cookie
+    size_t pos,pos2;
+    pos = request.find("Cookie: ")+8;
+    if(pos!=string::npos){
+        string tmp;
+        pos2 = request.find("\r\n",pos);
+        string token = request.substr(pos,pos2-pos);
+        cerr<<"cookie = "<<token<<endl;
+        while((pos=token.find(";"))!=string::npos){
+                tmp = token.substr(0,pos);
+                addCookie(tmp);
+                token.erase(0,pos+2); //skip "; "
+        }
+    }
+
 }
 
 Http::~Http()
 {
 }
+string Http::getHeaders(){
+    string tmp="HTTP/1.1 200 OK\r\n";
+    map<string, string>::iterator iter;
+    for(iter = this->headers.begin(); iter!=this->headers.end(); iter++){
+        tmp += iter->first+": "+iter->second+"\r\n";
+    }
+    return tmp + "\r\n";
+}
 string Http::getResponse(){
     text = "";
-    text += this->headers;
+    text += getHeaders();
     text += readFile();
     text += "\0";
     return text;
 }
 string Http::getResponse(string str){
     text = "";
-    text += this->headers;
+    text += getHeaders();
     text += str;
     text += "\0";
     return text;
@@ -93,9 +113,6 @@ string Http::getMethod(){
 string Http::getPath(){
     return path;
 }
-// string Http::getPath(){
-//     return path;
-// }
 void Http::addFormdata(string str){
     size_t pos;
     pos = str.find("=");
@@ -115,4 +132,19 @@ string Http::getFormdata(string str){
     else
         return "";
 }
-
+void Http::setHeader(string key,string value){
+    this->headers[key]=value;
+}
+void Http::addCookie(string str){
+    size_t pos;
+    pos = str.find("=");
+    string a,b;
+    if(pos!=string::npos){
+        a = str.substr(0,pos);
+        b = str.substr(pos+1,str.length()-pos-1);
+        cookies[a] = b;
+    }
+}
+string Http::getCookie(string str){
+    return this->cookies[str];
+}

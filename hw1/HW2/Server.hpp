@@ -8,7 +8,7 @@
 #define UserManage
 #include "Manage.hpp"
 #endif
-#define BUFFERSIZE 1024
+#define BUFFERSIZE 2048
 using namespace std;
 class Server
 {

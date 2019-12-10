@@ -1,3 +1,7 @@
+/*
+https://medium.com/@bojanmajed/standard-json-api-response-format-c6c1aabcaa6d
+http://www.faqs.org/rfcs/rfc4627.html
+*/
 #include <iostream>
 #include <vector>
 #include "Json.hpp"
@@ -9,6 +13,7 @@ Json::Json(/* args */){
 string Json::getJson(){
     int last = this->text.length()-1;
     this->text[last] = '}';
+    return this->text;
 }
 void Json::addJson(string key,vector<string> v){
     string tmp = "\""+key+"\":[";

@@ -9,8 +9,10 @@ private:
     string method;
     string path;
     void addFormdata(string str);
+    void addCookie(string str);
     map<string, string> formdata;
-    string headers;
+    map<string,string> headers;
+    map<string,string> cookies;
 public:
     Http(const string &request);
     ~Http();
@@ -20,5 +22,8 @@ public:
     string getMethod();
     string getPath();
     string getFormdata(string str);
+    string getHeaders();
+    string getCookie(string str);
+    void setHeader(string key,string value);
     
 };

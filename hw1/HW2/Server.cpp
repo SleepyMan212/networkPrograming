@@ -14,7 +14,7 @@
 #include <arpa/inet.h>
 #include "Http.hpp"
 #include "Server.hpp"
-// #include "User.hpp"
+#include "Json.hpp"
 #ifndef UserManage
 #define UserManage
 #include "Manage.hpp"
@@ -113,7 +113,6 @@ handleServer(int fd);
 fd is the client file descriptor
 */
 void Server::handleClient(int cfd){
-    cerr<<"1111111111111111"<<endl;
     int nbytes;
     // str = "";
     if ((nbytes = recv(cfd, buffer, sizeof(buffer), 0)) <= 0) {
@@ -129,7 +128,9 @@ void Server::handleClient(int cfd){
     }else{
         // we got some data from client
         string tmp;
+        cerr<<"--------Begin of request--------"<<endl;
         cerr<<buffer<<endl;
+        cerr<<"---------End of request---------"<<endl;
         Http http(buffer);
 
         // dispathch to correct function
@@ -139,27 +140,24 @@ void Server::handleClient(int cfd){
         cerr<<"METHOD = "<<method<<endl;
 
         if(method=="GET"&&path=="/"){
+            http.setHeader("Content-Type","text/html; charset=utf-8");
             tmp = http.getResponse();
         }else if(method=="POST"&&path=="/playerlist.html"){
             string name = http.getFormdata("userName");
             userManage->addUser(User(name,cfd));
+            http.setHeader("Content-Type","text/html; charset=utf-8");
+            http.setHeader("Set-Cookie","userName="+name);
+            cerr<<http.getCookie("userName")<<endl;
             tmp = http.getResponse();
         }else if(method=="GET"&&path=="/getAllUser"){
             cerr<<"get all user"<<endl;
-            tmp = "{\"users\":[";
-            // \"1q\",\"31\"]}";
             vector<string> v = userManage->getAllUser();
-            for (size_t i = 0; i < v.size(); i++){
-                tmp += "\"";
-                tmp += v.at(i);
-                tmp += "\"";
-                if(v.size()-1!=i){
-                    tmp += ",";
-                }
-            }
-            tmp += "]}";
-            
-            tmp = http.getResponse(tmp);
+            Json json;
+            json.addJson("users",v);
+
+    // "Content-Type: text/html; charset=utf-8\r\n";
+            http.setHeader("Content-Type","application/json; charset=utf-8'");
+            tmp = http.getResponse(json.getJson());
         }
         // Send to client
         const char *aa=tmp.c_str();
