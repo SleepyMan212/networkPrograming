@@ -32,6 +32,7 @@ Http::Http(const string &request){
                 token.erase(0,pos+1); //skip "&"
         }
         addParam(token);
+        cerr<<"--------End of GET--------"<<endl;
     }
     else if(method=="POST"){
         cerr<<"--------POST---------"<<endl;
@@ -61,12 +62,14 @@ Http::Http(const string &request){
         string tmp;
         pos2 = request.find("\r\n",pos);
         string token = request.substr(pos,pos2-pos);
-        cerr<<"cookie = "<<token<<endl;
+        // cerr<<"cookie = "<<token<<endl;
         while((pos=token.find(";"))!=string::npos){
                 tmp = token.substr(0,pos);
                 addCookie(tmp);
                 token.erase(0,pos+2); //skip "; "
         }
+        addCookie(token);
+
     }
 
 }

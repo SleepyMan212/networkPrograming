@@ -22,8 +22,7 @@
 #endif
 
 
-Server::Server()
-{
+Server::Server(){
     this->yes = 1;
     this->addrlen = sizeof(this->client);
 	memset(&hints, 0, sizeof(this->hints));
@@ -40,12 +39,13 @@ Server::Server()
 
     this->userManage = new Manage();
 
+    
+
     this->buildServer();
 
 }
 
-void * Server::get_in_addr(struct sockaddr *sa)
-{
+void * Server::get_in_addr(struct sockaddr *sa){
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
@@ -129,14 +129,21 @@ void Server::handleClient(int cfd){
     }else{
         // we got some data from client
         string tmp;
-        cerr<<"--------Begin of request--------"<<endl;
-        cerr<<buffer<<endl;
-        cerr<<"---------End of request---------"<<endl;
+        char tt[1000];
+        
         Http http(buffer);
 
         // dispathch to correct function
         string method = http.getMethod();
         string path = http.getPath();
+        string name = http.getCookie("userName");
+        if(name.empty()){
+            name = http.getFormdata("userName");
+            userManage->addUser(User(name,cfd));
+            http.setHeader("Set-Cookie","userName="+name);
+        }else if(!userManage->isUserExist(name)){
+            userManage->addUser(User(name,cfd));
+        }
         cerr<<"PATH = "<<path<<endl;
         cerr<<"METHOD = "<<method<<endl;
 
@@ -144,42 +151,153 @@ void Server::handleClient(int cfd){
             http.setHeader("Content-Type","text/html; charset=utf-8");
             tmp = http.getResponse();
         }else if(method=="POST"&&path=="/playerlist.html"){
-            string name;
             http.setHeader("Content-Type","text/html; charset=utf-8");
-            if(http.getCookie("userName").empty()){
-                name = http.getFormdata("userName");
-                userManage->addUser(User(name,cfd));
-                http.setHeader("Set-Cookie","userName="+name);
-            }
-            // name=http.getCookie("userName");
-            cerr<<http.getCookie("userName")<<endl;
+            
             tmp = http.getResponse();
         }else if(method=="GET"&&path=="/getAllUser"){
             cerr<<"get all user"<<endl;
+            string name = http.getCookie("userName");
+            cerr<<"name = "<<name<<endl;
             vector<string> v = userManage->getAllWaitingUser();
+            
+            for(vector<string>::iterator iter=v.begin(); iter!=v.end();){
+                if(*iter==name){
+                    iter = v.erase(iter);
+                    break;
+                }else{
+                    iter++;
+                }
+            }
+            
             Json json;
             json.addJson("users",v);
-
-            http.setHeader("Content-Type","application/json; charset=utf-8'");
+            http.setHeader("Content-Type","application/json; charset=utf-8");
             tmp = http.getResponse(json.getJson());
         }else if(method=="GET"&&path=="/playwith"){
             string t1 = http.getCookie("userName");
             string t2 = http.getParamdata("opponent");
             userManage->applyOpponent(t1,t2);
-        }else if(method=="POST"&&path=="/playwith"){
+            int player = userManage->getUserPlayer(t1);
+            sprintf(tt,"player=%d",player);
+            http.setHeader("Set-Cookie",string(tt));  // maybe have bug
+            tmp=http.getResponse("");
+        }else if(method=="GET"&&path=="/isHaveChanllege"){
+            Json json;
+            string t1 = http.getCookie("userName");
+            // cerr<<"t1 = "<<t1<<endl;
+            // cerr<<"wqeeqe = "<<userManage->getUserStatus(t1)<<endl;
+            if(userManage->getUserStatus(t1)==2){
+                string opponent = userManage->getOpponent(t1);
+                cerr<<"opponent = "<<opponent<<endl;
+                json.addJson("opponent",opponent);
+            }else{
+                json.addJson("opponent","");
+            }
+            
+            http.setHeader("Content-Type","application/json; charset=utf-8'");
+            tmp = http.getResponse(json.getJson());
+        }else if(method=="POST"&&path=="/reply"){
             string t1 = http.getCookie("userName");
             string t2 = userManage->getOpponent(t1);
-            string tmp = http.getFormdata("answer");
-            int ans = tmp.empty()?0:atoi(tmp.c_str());
+            string a = http.getFormdata("answer");
+            int ans = a.empty()?0:atoi(a.c_str());
+            int status = userManage->getUserStatus(t1);
+            cerr<<"ans = "<<ans<<endl;
             // int ans;
-            if(ans==1){         // opponent accept
+            if(ans==1&&status==2){         // opponent accept
                 userManage->playWithOpponent(t1,t2);
-            }else if(ans==-1){  // opponent reject
+                int player = userManage->getUserPlayer(t1);
+                sprintf(tt,"player=%d",player);
+                http.setHeader("Set-Cookie",string(tt));  // maybe have bug
+                this->boards.push_back(Ooxx(t1));
+                this->boards.push_back(Ooxx(t2));
+            }else{  // opponent reject
                 userManage->resetOpponent(t1,t2);
             }
+
+            tmp=http.getResponse("");
+            // cerr<<"res = "<<tmp<<endl;
+        }else if(method=="GET"&&path=="/isPlaying"){
+            string t1 = http.getCookie("userName");
+            int t = userManage->getUserStatus(t1);
+            int status = t==3?1:0;
+            // int player = userManage->getUserPlayer(t1);
+            Json json;
+            json.addJson("status",status);
+            // json.addJson("player",player);
+            http.setHeader("Content-Type","application/json; charset=utf-8");
+            tmp = http.getResponse(json.getJson());
+        }else if(method=="GET"&&path=="/play.html"){
+            http.setHeader("Content-Type","text/html; charset=utf-8");
+            tmp = http.getResponse();
+        }else if(method=="POST"&&path=="/chess"){
+            cerr<<"--------Begin of request--------"<<endl;
+            cerr<<buffer<<endl;
+            cerr<<"---------End of request---------"<<endl;
+            string t1 = http.getCookie("userName");
+            string t2 = userManage->getOpponent(t1);
+            int place = atoi(http.getFormdata("place").c_str());
+            cerr<<"place = "<<place<<endl;
+            int player = userManage->getUserPlayer(t1);
+            cerr<<"player = "<<player<<endl;
+            if(player != 0){
+                vector<int> board;
+                int idx1,idx2;
+                idx1=idx2=0;
+                // get board and user's board
+                for (size_t i = 0; i < boards.size(); i++){
+                    if(boards[i].getName()==t1){
+                        board = this->boards[i].getBoard();
+                        idx1 = i;
+                    }else if(boards[i].getName()==t2){
+                        idx2 = i;
+                    }else if(idx1!=0&&idx2!=0) break;
+                }
+                cerr<<"AAAAA"<<endl;
+                // update board
+                board[place] = player;
+                boards[idx1].setBoard(board);          
+                boards[idx2].setBoard(board);
+            }
+
+            tmp=http.getResponse("");
+        }else if(method=="GET"&&path=="/getBoard"){
+            string t1 = http.getCookie("userName");
+            vector<int> board;
+            cerr<<"t1 = "<<t1<<endl;
+            for (size_t i = 0; i < boards.size(); i++){
+                cerr<<"board name = "<<boards[i].getName()<<endl;
+                if(boards[i].getName()==t1){
+                    board = this->boards[i].getBoard();
+                    break;
+                }
+            }
+            cerr<<board.size()<<endl;
+            Json json;
+            json.addJson("board",board);
+
+            http.setHeader("Content-Type","application/json; charset=utf-8'");
+            tmp = http.getResponse(json.getJson());
+        }else if(method=="GET"&&path=="/logout"){
+            string t1 = http.getCookie("userName");
+            string t2 = userManage->getOpponent(t1);
+            userManage->resetOpponent(t1,t2);
+            userManage->delUser(t1);
+            http.setHeader("Set-Cookie","userNmae="+t1+"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT");
+            // http.setHeader("Set-Cookie","player="+t1+"; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT");
+            // Set-Cookie: token=deleted; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT
+            http.setHeader("Content-Type","text/html; charset=utf-8");
+            tmp = http.getResponse("ok");
+        }else{
+            cerr<<"Network error"<<endl;
+            cerr<<"path = "<<path<<endl;
+            tmp = http.getResponse("path have error");
         }
+        
+        
         // Send to client
         const char *aa=tmp.c_str();
+        // cerr<<"aa = "<<aa<<endl;
         int ttt = send(cfd,aa,strlen(aa),0);
 
         // // close client

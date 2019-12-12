@@ -74,6 +74,9 @@
                 width: 560px;
                 margin: 0 auto;
                 }
+                .logout{
+                    cursor: pointer;
+                }
         </style>
     </head>
     <body>
@@ -85,7 +88,7 @@
                 <h2>{{win_text}}</h2>
                 <div class="block_area">
                     <!-- <div class="block"  v-for="block in blocks"  v-bind:class="{circle: block.type==1,cross: block.type==-1}" v-on:click="player_go(block)"> -->
-                    <div class="block"  v-for="(block,bid) in blocks"  v-bind:class="{circle: block.type==1,cross: block.type==-1}" v-on:click="player_go(block)">
+                    <div class="block"  v-for="(block,bid) in blocks"  v-bind:class="{circle: block.type==1,cross: block.type==-1}" v-on:click="player_go(block,bid)">
                         <div class="small_number">{{bid+1}}</div>
                     </div>
                 </div>
@@ -93,7 +96,8 @@
                     Player
                     <div class="block small"v-bind:class="{circle: turn==1,cross: turn==-1}" ></div>
                 </h3>
-                <h3 @click="restart">Restart</h3>
+                <!-- <h3 @click="restart">Restart</h3>s -->
+                <h3 class="logout" @click="logout">logout</h3>
         </div>
     </body>
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script> -->
@@ -103,10 +107,14 @@
             el: "#app",
             data: {
                 blocks: [],
-                turn: 1
+                turn: 1,
+                time1: null
             },
             mounted(){
                 this.restart();
+                this.turn = this.getCookie("player");
+                this.time1 = setInterval(this.getBoard,5000)
+                
             },
             methods:{
                 restart(){
@@ -114,11 +122,51 @@
                         return {type: 0};
                     });
                 },
-                player_go(block){
+                player_go(block,bid){
                     if(block.type==0){
                         block.type = this.turn;
-                        this.turn*=-1;  
+                        this.turn*=-1;
+                        const t = "place="+bid
+                        console.log(t);
+                        
+                        fetch("chess",{
+                            method:'POST',
+                            body: t,
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                        })
                     }
+                },
+                getCookie(cname){
+                    var name = cname + "=";
+                    var ca = document.cookie.split(';');
+                    for(var i=0; i<ca.length; i++) {
+                        var c = ca[i].trim();
+                        if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+                    }
+                    return "";
+                },
+                getBoard(){
+                    fetch("getBoard")
+                        .then((res)=>res.json())
+                        .then((data)=>{
+                            this.blocks.forEach((block,i)=>{
+                                block.type = data.board[i];
+                                // console.log(block);
+                                
+                            })
+                        })
+                },
+                logout(){
+                    fetch("logout")
+                    .then(res=>res.text())
+                    .then((data)=>{
+                        if(data=="ok"){
+                            document.cookie=""
+                            window.location="/"
+                        }
+                    })
                 }
             },
             computed:{

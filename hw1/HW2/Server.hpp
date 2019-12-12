@@ -7,8 +7,9 @@
 #ifndef UserManage
 #define UserManage
 #include "Manage.hpp"
+#include "Ooxx.hpp"
 #endif
-#define BUFFERSIZE 2048
+#define BUFFERSIZE 102400
 using namespace std;
 class Server
 {
@@ -28,6 +29,7 @@ private:
     int ret;
     struct timeval tv;
     string str;
+    vector<Ooxx> boards;
 
 public:
     Server(/* args */);

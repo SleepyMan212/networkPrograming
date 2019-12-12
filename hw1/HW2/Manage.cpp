@@ -37,54 +37,92 @@ vector<string> Manage::getAllWaitingUser(){
     
 }
 
-User Manage::getUser(string name){
+const int Manage::getUser(string name)const {  
     for (size_t i = 0; i < users.size(); i++){
+        // users[i].setPlayer(-1);
         if(users[i].getName()==name)
-            return users[i];
+            // cerr<<"user name is "<<users[i].getName()<<endl;
+            // cerr<<"1: user address is "<<&users[i]<<endl;
+            return i;
     }
+    return -1;
     
 }
 void Manage::setOpponent(string name1,string name2){
-        User u1 = getUser(name1);
-        User u2 = getUser(name2);
+        int u1 = getUser(name1);
+        int u2 = getUser(name2);
         // User a;
         // opponents.insert(pair<User, User>(a,a));
-        opponents[u1]=u2;
-        opponents[u2]=u1;
+        opponents[users[u1]]=users[u2];
+        opponents[users[u2]]=users[u1];
 }
 void Manage::setOpponent(User u1,User u2){
         opponents[u1]=u2;
         opponents[u2]=u1;
 }
 void Manage::applyOpponent(string name1,string name2){
-        User u1 = getUser(name1);
-        User u2 = getUser(name2);
-        u1.setStatus(1);
-        u2.setStatus(2);
-        setOpponent(u1,u2);
+        int u1 = getUser(name1);
+        int u2 = getUser(name2);
+        users[u1].setStatus(1);
+        users[u2].setStatus(2);
+        users[u1].setPlayer(-1);
+        users[u2].setPlayer(1);
+        setOpponent(users[u1],users[u2]);
 }
 void Manage::playWithOpponent(string name1,string name2){
-        User u1 = getUser(name1);
-        User u2 = getUser(name2);
-        u1.setStatus(4);
-        u2.setStatus(4);
+        int u1 = getUser(name1);
+        int u2 = getUser(name2);
+        users[u1].setStatus(3);
+        users[u2].setStatus(3);
 }
 void Manage::resetOpponent(string name1,string name2){
-        User u1 = getUser(name1);
-        User u2 = getUser(name2);
-        opponents.erase(u1);
-        opponents.erase(u2);
-        u1.setStatus(0);
-        u2.setStatus(0);
+        int u1 = getUser(name1);
+        int u2 = getUser(name2);
+        if(u1==-1) return;
+        opponents.erase(users[u1]);
+        users[u1].setStatus(0);
+        if(u2==-1) return;
+        opponents.erase(users[u2]);
+        users[u2].setStatus(0);
 }
 string Manage::getOpponent(string name){
     map<User, User>::iterator iter;
-    User u = getUser(name);
-    iter = opponents.find(u);
+    int u = getUser(name);
+    iter = opponents.find(users[u]);
     if(iter!=opponents.end()){
         return iter->second.getName();
     }else{
         return "";
     }
     
+}
+int Manage::getUserStatus(string name){
+    int u = getUser(name);
+    return users[u].getStatus();
+}
+int Manage::getUserPlayer(string name){
+    int u = getUser(name);
+    cerr<<"2: user address is "<<&u<<endl;
+    cerr<<"click name = "<<users[u].getName()<<endl;
+    cerr<<"click player = "<<users[u].getPlayer()<<endl;
+    return users[u].getPlayer();
+}
+bool Manage::delUser(const string name){
+    int u1 = getUser(name);
+    if(u1==-1) return true;
+    vector<User>::iterator iter;
+    for(vector<User>::iterator iter=users.begin(); iter!=users.end();){
+        if(iter->getName()==name){
+            iter = users.erase(iter);
+            return true;
+        }else{
+            iter++;
+        }
+    }
+    return false;
+}
+bool Manage::isUserExist(string name){
+    int u1 = getUser(name);
+    if(u1==-1) return false;
+    return true;
 }

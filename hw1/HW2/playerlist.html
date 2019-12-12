@@ -41,7 +41,7 @@
             <div class="list" >
                 <div class="box" v-for="user in users">
                     <div class="user">{{user}}</div>
-                    <div class="play">Play</div>
+                    <div class="play" @click="play(user)">Play</div>
                 </div>
             </div>
         </div>
@@ -53,24 +53,75 @@
         el: "#app",
         data: {
             users:[],
-            time: null
+            time1: null,
+            time2: null,
+            time3: null,
+            reply: false,
+            isplaying: null
+
         },
         mounted(){
             this.getAllUser();
             this.timer();
+
+            // this.play = document.querySelector(".play");
+            // play.addEventListener("click",);
         },
         methods:{
             timer(){
-                this.time = setInterval(this.getAllUser,5000)
+                this.time1 = setInterval(this.getAllUser,8000)
+                this.time2 = setInterval(this.checkChanllege,9000)
+                this.time2 = setInterval(this.checkStatus,10000)
             },
             getAllUser(){
                 fetch("getAllUser")
                 .then((res)=>res.json())
                 .then((data)=>{
-                    console.log(data);
+                    // console.log(data);
                     this.users = data.users;
                 })
+            },
+            play(name){
+                // console.log(name);
+                fetch("playwith?opponent="+name)
+                    .then((res)=>res.text())
+                    .then((data)=>{
+                        console.log(data);
+                    })
+            },
+            checkChanllege(){
+                fetch("isHaveChanllege")
+                    .then(res=>res.json())
+                    .then((data)=>{
+                        console.log(data);
+                        if(data.opponent!=""&&!this.reply){
+                            this.reply = confirm(`Do you wnat to play with ${data.opponent}`)
+                            tmp = {answer:1}
+                            if(this.reply){
+                                fetch("reply",{
+                                    method: 'POST',
+                                    body: "answer=1",
+                                    headers: {
+                                    // 'user-agent': 'Mozilla/4.0 MDN Example',
+                                    'content-type': 'Content-Type: application/x-www-form-urlencoded'
+                                    },
+                                })
+                            }
+                        }
+                    })
+            },
+            checkStatus(){
+                fetch("isPlaying")
+                    .then(res=>res.json())
+                    .then((data)=>{
+                        if(data.status == 1){
+                            window.location="play.html";
+                        }
+                        // this.isplaying = data.status;
+                        
+                    })
             }
+
         },
         computed:{
             
